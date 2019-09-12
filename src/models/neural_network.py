@@ -1,63 +1,102 @@
 from abc import ABC
 import pandas as pd
 import numpy as np
+import math
 import sys
 import random
 
 from .classifier import Classifier
 
+def softmax(x: np.array):
+    e_x = math.e**x
+    return e_x / np.sum(e_x)
+
 
 class NeuralNetworkLayer:
 
-    def __init__(self, size):
-        # Ensure layer size > 0
-        if size <= 0:
-            raise ValueError('Invalid layer size, expected size > 0.')
+    def __init__(self, output_shape: tuple):
+        # Ensure shapes are valid
+        NeuralNetworkLayer.__validate_shape(output_shape)
+        self.output_shape = output_shape
+        self.input_shape = None
 
-        self.size = size
+    def set_input_shape(self, shape: tuple):
+        NeuralNetworkLayer.__validate_shape(shape)
+        self.input_shape = shape
 
+    @staticmethod
+    def __validate_shape(shape: tuple):
+        for val in shape:
+            if not isinstance(val, int):
+                raise TypeError('Invalid shape, expected a tuple of ints')
+            if val <= 0:
+                raise ValueError('Invalid value in shape, expected > 0.')
+        
 
-class FullyConnectedLayer(NeuralNetworkLayer):
+class FlatDenseLayer(NeuralNetworkLayer):
 
-    def __init__(self, size: int, prev: NeuralNetworkLayer = None):
-        super().__init__(size)
-        self.prev = prev
-        self.__randomise()
+    def __init__(self, output_shape: tuple, activation=softmax):
+        super().__init__(output_shape)
+        self.activation = activation
+        
+    @classmethod
+    def from_size(cls, size: int):
+        return cls((size,))
 
-    def __randomise(self):
+    def randomise(self):
         """
         Randomly initialise the layer's weights and biases.
         """
-        self.biases = np.random.standard_normal(self.size)
-        self.weights = np.random.standard_normal((self.size, self.prev.size)) if self.prev is not None else None
-        print(self.biases)
-        print(self.weights)
+        self.biases = None
+        self.weights = None
+
+        if self.input_shape is not None:
+            self.biases = np.random.standard_normal((self.output_shape[0], 1))
+            self.weights = np.random.standard_normal((self.output_shape[0], self.input_shape[0]))
+
+    def get_output(self, ipt: np.ndarray):
+        # No input_shape implies first layer, just return the input as the output
+        if self.input_shape is None:
+            if ipt.shape != self.output_shape:
+                raise ValueError('Invalid shape of ipt array, expected {} but got {}'.format(self.output_shape, ipt.shape))
+            return ipt
+
+        # Ensure input is same shape as self.input_shape
+        if ipt.shape != self.input_shape:
+            raise ValueError('Invalid shape of ipt array, expected {} but got {}'.format(self.input_shape, ipt.shape))
+
+        ipt = ipt[:, np.newaxis]
+        ret = self.activation(self.weights @ ipt + self.biases)
+        ret = ret.squeeze()
+
+        return ret
 
 
 class NeuralNetwork(Classifier):
 
-    def __init__(self, shape: tuple):
-        # Ensure tuple of ints
-        for e in shape:
-            if not isinstance(e, int):
-                raise TypeError('Invalid type in tuple {}, expected int'.format(shape))
+    def __init__(self, layers: list):
+        # Ensure layers is a ist of NeuralNetworkLayer objects
+        for l in layers:
+            if not isinstance(l, NeuralNetworkLayer):
+                raise TypeError('Invalid type in list {}, expected {}'.format(layers, NeuralNetworkLayer))
         
-        self.layers = []
+        self.layers = layers
 
-
-    def add_layer(self, layer: NeuralNetworkLayer):
-        """
-        Add a new layer to the network
-        """
-        layer.prev = self.layers[-1]
-        self.layers.append(layer)
-
+        # Link layers
+        i = 1
+        while i < len(self.layers):
+            self.layers[i].set_input_shape(self.layers[i-1].output_shape)
+            i += 1
+        
+        # Randomise weights
+        self.__randomise()
 
     def __randomise(self):
         """
         Randomly initialise the network's weights and biases.
         """
-        return
+        for layer in self.layers:
+            layer.randomise()
 
     def clear(self):
         """
@@ -65,14 +104,26 @@ class NeuralNetwork(Classifier):
         """
         return
 
-    def predict(self, x: pd.DataFrame) -> pd.DataFrame:
+    def predict(self, x) -> np.ndarray:
         """
         Predict the class of each row of data in x.
         """
-        return
+        # TODO: Ensure x has same dimension as input layer
+        # TODO: Make more efficient
+
+        x = np.apply_along_axis(self.__predict_single, 1, x)
+        return np.argmax(x, axis=1)
+        
+    def __predict_single(self, row):
+        ipt = row
+        for layer in self.layers:
+            ipt = layer.get_output(ipt)
+        return ipt
 
     def train(self, x: pd.DataFrame, y: pd.DataFrame):
         """
         Train the classifier on a dataset x and corresponding labels y.
         """
+        # TODO: Implement this
         return
+        

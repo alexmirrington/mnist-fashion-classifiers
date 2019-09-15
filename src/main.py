@@ -21,13 +21,15 @@ def main():
 
     data_val = data_test_all[:2000]
 
+    x, y = shuffle_data(data_train, label_train)
+
     model = NeuralNetwork([
         FlatDenseLayer.from_size(784),
         FlatDenseLayer.from_size(100),
         FlatDenseLayer.from_size(10)
     ])
 
-    model.train(data_train, label_train)
+    model.train(x, y)
     
     y_pred = model.predict(data_val)
     print('Accuracy: {:.02f}%'.format(100*calc_accuracy(y_pred,label_val)))
@@ -36,6 +38,11 @@ def calc_accuracy(y_hat, y):
     if (y_hat.shape == y.shape):
         pred = (y_hat == y)
         return len(np.where(pred == True)[0]) / len(y)
+
+def shuffle_data(x, y):
+    data = np.array(list(zip(x, y)))
+    np.random.shuffle(data)
+    return data[:,0], data[:,1]
 
 if __name__ == '__main__':
     main()

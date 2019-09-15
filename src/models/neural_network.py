@@ -4,6 +4,7 @@ import numpy as np
 import math
 import sys
 import random
+import time
 
 from .classifier import Classifier
 
@@ -14,27 +15,31 @@ class ActivationFunction:
         self.func = func
         self.d_func = d_func
 
-def sig(x: np.array):
+def f_sigmoid(x: np.array):
     return 1 / (1 + np.exp(-x))
 
-def d_sig(x: np.array):
-    sig_x = sig(x)
+def df_sigmoid(x: np.array):
+    sig_x = f_sigmoid(x)
     return sig_x * (1 - sig_x)
 
-def th(x: np.array):
+def f_tanh(x: np.array):
     e_nx = np.exp(-x)
     e_x = np.exp(x)
     return (e_x - e_nx)/(e_x + e_nx)
 
-def d_th(x: np.array):
-    tanh_x = th(x)
-    #print(tanh_x)
-    #print(tanh_x**2)
-
+def df_tanh(x: np.array):
+    tanh_x = f_tanh(x)
     return 1 - tanh_x**2
 
-sigmoid = ActivationFunction(sig, d_sig)
-tanh = ActivationFunction(th, d_th)
+def f_relu(x: np.array):
+    return np.maximum(x, 0)
+
+def df_relu(x: np.array):
+    return (x > 0).astype(int)
+
+sigmoid = ActivationFunction(f_sigmoid, df_sigmoid)
+tanh = ActivationFunction(f_tanh, df_tanh)
+relu = ActivationFunction(f_relu, df_relu)
 
 
 class NeuralNetworkLayer:
@@ -101,7 +106,7 @@ class FlatDenseLayer(NeuralNetworkLayer):
         self.raw_outputs = raw_out.squeeze()
         self.outputs = self.activation.func(raw_out).squeeze()
 
-        #print(str(min(self.raw_outputs)) + ', ' + str(max(self.raw_outputs)))
+        # print(str(min(self.raw_outputs)) + ', ' + str(max(self.raw_outputs)))
 
         return self.outputs
 
@@ -120,7 +125,7 @@ class FlatDenseLayer(NeuralNetworkLayer):
         db = eta * dC_dz
         db = db[:, np.newaxis]
 
-        next_dC_da = np.dot(self.weights.T, d_sigma)
+        next_dC_da = np.dot(self.weights.T, dC_dz)
 
         self.weights += dw
         self.biases += db
@@ -130,7 +135,7 @@ class FlatDenseLayer(NeuralNetworkLayer):
 
 class NeuralNetwork(Classifier):
 
-    def __init__(self, layers: list, eta=0.05, batch_size=1):
+    def __init__(self, layers: list, eta=0.01, batch_size=1):
         # Ensure layers is a ist of NeuralNetworkLayer objects
         for l in layers:
             if not isinstance(l, NeuralNetworkLayer):
@@ -190,17 +195,18 @@ class NeuralNetwork(Classifier):
     # def cost(predicted: np.ndarray, actual: np.ndarray):
     #     return ((actual - predicted)**2).mean(axis=ax)
 
-    def train(self, x: pd.DataFrame, y: pd.DataFrame):
+    def train(self, x: pd.DataFrame, y: pd.DataFrame, epochs=10):
         """
         Train the classifier on a dataset x and corresponding labels y.
         """
         # TODO implement batch sizes, allowing for batch prediction too
-        epochs = 10
+        print('Training started')
+
         for e in range(epochs):
-            print('Epoch: {}'.format(e))
 
             epoch_correct = 0
-
+            total_sse = 0
+            epoch_start = time.perf_counter()
             index = 0
             while index < len(x):
 
@@ -209,8 +215,9 @@ class NeuralNetwork(Classifier):
                 # as the number of classes
                 y_actual = np.zeros(y_pred.shape)
                 y_actual[y[index]] = 1
+                # TODO Allow for other cost functions
                 dC_da = y_actual - y_pred
-
+                total_sse += np.sum(dC_da**2)
                 epoch_correct += 1 if np.argmax(y_pred) == y[index] else 0
 
                 # iterate through layers, propagating errors
@@ -218,11 +225,14 @@ class NeuralNetwork(Classifier):
                 while layer > 0:
                     dC_da = self.layers[layer].adjust_weights(self.eta, self.layers[layer-1].outputs, dC_da)
                     layer -= 1
-
                 index += 1
+            
+            epoch_end = time.perf_counter()
 
-                
-            print('Train accuracy: {:.2f}%'.format(epoch_correct/index * 100))
+            print('Epoch {} complete in {:.3f}s'.format(e+1, epoch_end - epoch_start))
+            print('Accuracy: {:.2f}%'.format(epoch_correct/index * 100))
+            print('Mean SSE: {}'.format(total_sse/index * 100))
+            print()
 
         print('Training complete')
 

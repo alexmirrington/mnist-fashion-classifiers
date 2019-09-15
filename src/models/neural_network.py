@@ -113,7 +113,6 @@ class FlatDenseLayer(NeuralNetworkLayer):
     def adjust_weights(self, eta: float, prev_outputs: np.ndarray, dC_da: np.ndarray):
 
         # TODO Validate shapes of errors
-        # errors should have dimension 1xn where n is the number of nodes in the layer above
         
         # Compute weight changes using chain rule
         d_sigma = self.activation.d_func(self.raw_outputs)
@@ -143,12 +142,16 @@ class NeuralNetwork(Classifier):
         
         # Ensure batch_size is > 0
         if type(batch_size) != int:
-            raise TypeError('Invalid batch_size type, expected {}'.format(int))
+            raise TypeError('Invalid type for param batch_size, expected {}'.format(int))
         if batch_size <= 0:
             raise ValueError('Parameter batch_size must be positive')
 
-        # TODO Validate eta
-
+        # Validate eta
+        if type(eta) != float:
+            raise TypeError('Invalid type for param eta, expected {}'.format(float))
+        if eta <= 0:
+            raise ValueError('Parameter eta must be positive')
+        
         self.layers = layers
         self.eta = eta
         self.batch_size = batch_size

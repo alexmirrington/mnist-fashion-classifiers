@@ -7,9 +7,22 @@ import random
 
 from .classifier import Classifier
 
-def softmax(x: np.array):
-    e_x = math.e**x
-    return e_x / np.sum(e_x)
+
+class ActivationFunction:
+
+    def __init__(self, func: callable, d_func: callable):
+        self.func = func
+        self.d_func = d_func
+
+def sig(x: np.array):
+    return 1 / (1 + np.exp(-x))
+
+def d_sig(x: np.array):
+    sig_x = sig(x)
+    return sig_x * (1 - sig_x)
+
+sigmoid = ActivationFunction(sig, d_sig)
+
 
 
 class NeuralNetworkLayer:
@@ -35,7 +48,7 @@ class NeuralNetworkLayer:
 
 class FlatDenseLayer(NeuralNetworkLayer):
 
-    def __init__(self, output_shape: tuple, activation=softmax):
+    def __init__(self, output_shape: tuple, activation=sigmoid):
         super().__init__(output_shape)
         self.activation = activation
         
@@ -66,7 +79,7 @@ class FlatDenseLayer(NeuralNetworkLayer):
             raise ValueError('Invalid shape of ipt array, expected {} but got {}'.format(self.input_shape, ipt.shape))
 
         ipt = ipt[:, np.newaxis]
-        ret = self.activation(self.weights @ ipt + self.biases)
+        ret = self.activation.func(self.weights @ ipt + self.biases)
         ret = ret.squeeze()
 
         return ret

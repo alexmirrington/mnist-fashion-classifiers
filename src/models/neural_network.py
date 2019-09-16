@@ -106,7 +106,7 @@ class FlatDenseLayer(NeuralNetworkLayer):
         self.raw_outputs = raw_out.squeeze()
         self.outputs = self.activation.func(raw_out).squeeze()
 
-        # print(str(min(self.raw_outputs)) + ', ' + str(max(self.raw_outputs)))
+       # print(str(min(self.raw_outputs)) + ', ' + str(max(self.raw_outputs)))
 
         return self.outputs
 
@@ -134,7 +134,7 @@ class FlatDenseLayer(NeuralNetworkLayer):
 
 class NeuralNetwork(Classifier):
 
-    def __init__(self, layers: list, eta=0.01, batch_size=1):
+    def __init__(self, layers: list, eta=0.05, batch_size=1):
         # Ensure layers is a ist of NeuralNetworkLayer objects
         for l in layers:
             if not isinstance(l, NeuralNetworkLayer):
@@ -216,9 +216,11 @@ class NeuralNetwork(Classifier):
                 y_pred = self.__predict_single(x[index])
                 # TODO Fix assumption that number of output neurons is the same
                 # as the number of classes
+                # TODO look into the error here
                 y_actual = np.zeros(y_pred.shape)
                 y_actual[y[index]] = 1
                 # TODO Allow for other cost functions
+                #print(y_pred)
                 dC_da = y_actual - y_pred
                 total_sse += np.sum(dC_da**2)
                 epoch_correct += 1 if np.argmax(y_pred) == y[index] else 0

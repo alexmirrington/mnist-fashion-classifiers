@@ -26,6 +26,7 @@ def main():
     model = NeuralNetwork([
         FlatDenseLayer.from_size(784),
         FlatDenseLayer.from_size(100),
+        FlatDenseLayer.from_size(20),
         FlatDenseLayer.from_size(10)
     ])
 

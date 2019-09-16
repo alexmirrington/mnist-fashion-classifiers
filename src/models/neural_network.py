@@ -178,7 +178,7 @@ class NeuralNetwork(Classifier):
         """
         return
 
-    def predict(self, x) -> np.ndarray:
+    def predict(self, x: np.ndarray) -> np.ndarray:
         """
         Predict the class of each row of data in x.
         """
@@ -198,7 +198,7 @@ class NeuralNetwork(Classifier):
     # def cost(predicted: np.ndarray, actual: np.ndarray):
     #     return ((actual - predicted)**2).mean(axis=ax)
 
-    def train(self, x: pd.DataFrame, y: pd.DataFrame, epochs=10):
+    def train(self, x: np.ndarray, y: np.ndarray, epochs=10):
         """
         Train the classifier on a dataset x and corresponding labels y.
         """

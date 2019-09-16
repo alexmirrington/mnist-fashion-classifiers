@@ -1,5 +1,5 @@
 from abc import ABC
-import pandas as pd
+import numpy as np
 
 class Classifier(ABC):
 
@@ -12,13 +12,13 @@ class Classifier(ABC):
         """
         return
 
-    def predict(self, x: pd.DataFrame) -> pd.DataFrame:
+    def predict(self, x: np.ndarray) -> np.ndarray:
         """
         Predict the class of each row of data in x.
         """
         return
 
-    def train(self, x: pd.DataFrame, y: pd.DataFrame):
+    def train(self, x: np.ndarray, y: np.ndarray, epochs=10):
         """
         Train the classifier on a dataset x and corresponding labels y.
         """

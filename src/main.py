@@ -4,6 +4,8 @@ import numpy as np
 from models.classifier import Classifier
 from models.neural_network import NeuralNetwork
 from models.neural_network import FlatDenseLayer
+from models.neural_network import ActivationFunction, sigmoid, tanh, relu
+
 
 def main():
     # Load data
@@ -21,18 +23,15 @@ def main():
 
     data_val = data_test_all[:2000]
 
-    print(label_train.shape)
+    label_train = label_train[:, np.newaxis]
 
-    x, y = shuffle_data(data_train, label_train)
-    print(x.shape)
-    print(y.shape)
     model = NeuralNetwork([
-        FlatDenseLayer.from_size(784),
-        FlatDenseLayer.from_size(100),
-        FlatDenseLayer.from_size(20),
-        FlatDenseLayer.from_size(10)
-    ])
-    model.train(x, y)
+        FlatDenseLayer((784,), activation=sigmoid),
+        FlatDenseLayer((100,), activation=sigmoid),
+        FlatDenseLayer((20,), activation=sigmoid),
+        FlatDenseLayer((10,), activation=sigmoid),
+    ], eta=0.1, batch_size=64)
+    model.train(data_train, label_train, epochs=100)
     
     y_activations, y_pred = model.predict(data_val)
     print(y_pred.shape)
@@ -42,12 +41,6 @@ def calc_accuracy(y_hat, y):
     if (y_hat.shape == y.shape):
         pred = (y_hat == y)
         return len(np.where(pred == True)[0]) / len(y)
-
-def shuffle_data(x, y):
-    y = y[:, np.newaxis]
-    data = np.concatenate((x, y), axis=1)
-    np.random.shuffle(data)
-    return data[:,:-1], data[:,data.shape[1]-1:]
 
 if __name__ == '__main__':
     main()

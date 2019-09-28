@@ -7,6 +7,8 @@ import random
 import time
 
 from .classifier import Classifier
+from utils.preprocessing import shuffle_data
+
 
 class ActivationFunction:
 
@@ -31,10 +33,13 @@ def df_tanh(x: np.array):
     return 1 - tanh_x**2
 
 def f_relu(x: np.array):
-    return np.maximum(x, 0)
+    x_copy = np.copy(x)
+    x_copy[x_copy<0] = 0
+    return x_copy
 
 def df_relu(x: np.array):
-    return (x > 0).astype(int)
+    ret = (x > 0).astype(int)
+    return ret
 
 sigmoid = ActivationFunction(f_sigmoid, df_sigmoid)
 tanh = ActivationFunction(f_tanh, df_tanh)
@@ -46,13 +51,15 @@ def sse(predicted: np.ndarray, actual: np.ndarray):
 def d_sse(predicted: np.ndarray, actual: np.ndarray):
     return actual - predicted
 
+
 class NeuralNetworkLayer:
 
-    def __init__(self, output_shape: tuple):
+    def __init__(self, output_shape: tuple, activation=sigmoid):
         # Ensure shapes are valid
         NeuralNetworkLayer.__validate_shape(output_shape)
         self.output_shape = output_shape
         self.input_shape = None
+        self.activation = activation
 
     def set_input_shape(self, shape: tuple):
         NeuralNetworkLayer.__validate_shape(shape)
@@ -70,8 +77,7 @@ class NeuralNetworkLayer:
 class FlatDenseLayer(NeuralNetworkLayer):
 
     def __init__(self, output_shape: tuple, activation=sigmoid):
-        super().__init__(output_shape)
-        self.activation = activation
+        super().__init__(output_shape, activation)
         self.raw_outputs = None
         self.outputs = None
 
@@ -139,7 +145,6 @@ class FlatDenseLayer(NeuralNetworkLayer):
         return self.outputs
 
     def adjust_weights(self, eta: float, prev_outputs: np.ndarray, dC_da: np.ndarray):
-
         # print('dC_da:', dC_da.shape)
         # print('prev_out:', prev_outputs.shape)
         # TODO Validate shapes of errors
@@ -239,11 +244,13 @@ class NeuralNetwork(Classifier):
         epoch_idx = 0
         for e in range(epochs):
 
+            data, lbl = shuffle_data(x, y)
+
             epoch_correct = 0
             epoch_start = time.perf_counter()
 
-            data_split = np.split(x, range(self.batch_size, len(x), self.batch_size))
-            lbl_split = np.split(y, range(self.batch_size, len(x), self.batch_size))
+            data_split = np.split(data, range(self.batch_size, len(x), self.batch_size))
+            lbl_split = np.split(lbl, range(self.batch_size, len(x), self.batch_size))
 
             batch_idx = 0
             while batch_idx < len(data_split):

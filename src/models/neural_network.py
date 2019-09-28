@@ -8,7 +8,6 @@ import time
 
 from .classifier import Classifier
 
-
 class ActivationFunction:
 
     def __init__(self, func: callable, d_func: callable):
@@ -41,6 +40,11 @@ sigmoid = ActivationFunction(f_sigmoid, df_sigmoid)
 tanh = ActivationFunction(f_tanh, df_tanh)
 relu = ActivationFunction(f_relu, df_relu)
 
+def sse(predicted: np.ndarray, actual: np.ndarray):
+    return 0.5*(actual - predicted)**2
+
+def d_sse(predicted: np.ndarray, actual: np.ndarray):
+    return actual - predicted
 
 class NeuralNetworkLayer:
 
@@ -86,42 +90,71 @@ class FlatDenseLayer(NeuralNetworkLayer):
             self.biases = np.random.standard_normal((self.output_shape[0], 1))
             self.weights = np.random.standard_normal((self.output_shape[0], self.input_shape[0]))
 
+    @staticmethod
+    def __get_valid_batch(array: np.ndarray, shape: tuple):
+        """
+        Given a specified shape (s0, s1, ..., sk), verify that the array
+        is of shape (s0, s1, ..., sk, n).
+        """
+        if len(array.shape) > len(shape) + 1:
+            raise ValueError('Too many dimensions in param array.')
+
+        if len(array.shape) < len(shape):
+            raise ValueError('Not enough dimensions in param array.')
+        
+        # Check if array has shape (s0, s1, ..., sk)
+        # If so, cast to shape (s0, s1, ..., sk, 1)
+        if len(array.shape) == len(shape):
+            array = array[:, np.newaxis]
+
+        if array.shape[:-1] != shape:
+            raise ValueError('Invalid shape of param array, expected {} but got {}'.format(shape, array.shape))
+        
+        return array
+
     def get_activations(self, ipt: np.ndarray):
+        """
+        Get the activations/outputs of the current layer, given the input array.
+        """
+
         # No input_shape implies first layer, just return the input as the output
         if self.input_shape is None:
-            if ipt.shape != self.output_shape:
-                raise ValueError('Invalid shape of ipt array, expected {} but got {}'.format(self.output_shape, ipt.shape))
+            ipt = FlatDenseLayer.__get_valid_batch(ipt, self.output_shape)
+            
             self.outputs = ipt
             self.raw_outputs = ipt
+
             return ipt
 
-        # Ensure input is same shape as self.input_shape
-        if ipt.shape != self.input_shape:
-            raise ValueError('Invalid shape of ipt array, expected {} but got {}'.format(self.input_shape, ipt.shape))
+        ipt = FlatDenseLayer.__get_valid_batch(ipt, self.input_shape)
 
-        ipt = ipt[:, np.newaxis]
         raw_out = self.weights @ ipt + self.biases
 
         # TODO Consider memory usage here
         self.raw_outputs = raw_out.squeeze()
         self.outputs = self.activation.func(raw_out).squeeze()
 
-       # print(str(min(self.raw_outputs)) + ', ' + str(max(self.raw_outputs)))
+        # print(str(min(self.raw_outputs)) + ', ' + str(max(self.raw_outputs)))
 
         return self.outputs
 
     def adjust_weights(self, eta: float, prev_outputs: np.ndarray, dC_da: np.ndarray):
 
+        # print('dC_da:', dC_da.shape)
+        # print('prev_out:', prev_outputs.shape)
         # TODO Validate shapes of errors
         
         # Compute weight changes using chain rule
         d_sigma = self.activation.d_func(self.raw_outputs)
 
         dC_dz = dC_da * d_sigma  # a = sigma(z) so da_dz = d_sigma(z)
-        dw = eta * (np.outer(dC_dz, prev_outputs))  # prev_outputs = dz_dw
-        
+
+        dw = eta * (dC_dz @ prev_outputs.T)  # prev_outputs = dz_dw
+        #print(dw)
+
         # Compute bias changes
-        db = eta * dC_dz
+        #print(dC_dz.sum(axis=1).shape)
+        db = eta * dC_dz.sum(axis=1)
         db = db[:, np.newaxis]
 
         next_dC_da = np.dot(self.weights.T, dC_dz)
@@ -134,7 +167,7 @@ class FlatDenseLayer(NeuralNetworkLayer):
 
 class NeuralNetwork(Classifier):
 
-    def __init__(self, layers: list, eta=0.05, batch_size=1):
+    def __init__(self, layers: list, eta=0.05, batch_size=64):
         # Ensure layers is a ist of NeuralNetworkLayer objects
         for l in layers:
             if not isinstance(l, NeuralNetworkLayer):
@@ -182,11 +215,12 @@ class NeuralNetwork(Classifier):
         """
         Predict the class of each row of data in x.
         """
-        # TODO: Ensure x has same dimension as input layer
-        # TODO: Make more efficient
 
-        x = np.apply_along_axis(self.__predict_single, 1, x)
-        return np.argmax(x, axis=1)
+        # TODO: Ensure x has same dimension as input layer
+        activation = x.T
+        for layer in self.layers:
+            activation = layer.get_activations(activation)
+        return activation, np.argmax(activation, axis=0)
         
     def __predict_single(self, row):
         ipt = row
@@ -194,49 +228,55 @@ class NeuralNetwork(Classifier):
             ipt = layer.get_activations(ipt)
         return ipt        
 
-    # @staticmethod
-    # def cost(predicted: np.ndarray, actual: np.ndarray):
-    #     return ((actual - predicted)**2).mean(axis=ax)
 
-    def train(self, x: np.ndarray, y: np.ndarray, epochs=10):
+    def train(self, x: np.ndarray, y: np.ndarray, epochs=25):
         """
         Train the classifier on a dataset x and corresponding labels y.
         """
-        # TODO implement batch sizes, allowing for batch prediction too
-        print('Training started')
 
+        print('Training started')
+        
+        epoch_idx = 0
         for e in range(epochs):
 
             epoch_correct = 0
-            total_sse = 0
             epoch_start = time.perf_counter()
-            index = 0
-            while index < len(x):
 
-                y_pred = self.__predict_single(x[index])
-                # TODO Fix assumption that number of output neurons is the same
-                # as the number of classes
-                # TODO look into the error here
-                y_actual = np.zeros(y_pred.shape)
-                y_actual[y[index]] = 1
-                # TODO Allow for other cost functions
-                #print(y_pred)
-                dC_da = y_actual - y_pred
-                total_sse += np.sum(dC_da**2)
-                epoch_correct += 1 if np.argmax(y_pred) == y[index] else 0
+            data_split = np.split(x, range(self.batch_size, len(x), self.batch_size))
+            lbl_split = np.split(y, range(self.batch_size, len(x), self.batch_size))
+
+            batch_idx = 0
+            while batch_idx < len(data_split):
+
+                batch = data_split[batch_idx]
+                batch_lbls = lbl_split[batch_idx]
+
+                batch_pred, batch_pred_lbls = self.predict(batch)
+
+                batch_actual = np.zeros(batch_pred.shape)
+
+                for i in range(batch_actual.shape[0]):
+                    batch_actual[i, batch_lbls.T.squeeze() == i] = 1
+
+                
+                dC_da = d_sse(batch_pred, batch_actual)
+
+                batch_correct = (batch_pred_lbls == batch_lbls.squeeze()).sum()
 
                 # iterate through layers, propagating errors
                 layer = len(self.layers) - 1
                 while layer > 0:
                     dC_da = self.layers[layer].adjust_weights(self.eta, self.layers[layer-1].outputs, dC_da)
                     layer -= 1
-                index += 1
-            
+
+                epoch_correct += batch_correct
+                batch_idx += 1
+
+            epoch_idx += 1
             epoch_end = time.perf_counter()
 
+            print('Accuracy: {:.2f}%'.format(epoch_correct/x.shape[0] * 100))
             print('Epoch {} complete in {:.3f}s'.format(e+1, epoch_end - epoch_start))
-            print('Accuracy: {:.2f}%'.format(epoch_correct/index * 100))
-            print('Mean SSE: {}'.format(total_sse/index * 100))
             print()
 
         print('Training complete')

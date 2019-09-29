@@ -32,9 +32,18 @@ def df_relu(x: np.array):
     ret = (x > 0).astype(int)
     return ret
 
+def f_softplus(x: np.array):
+    e_x = np.exp(x)
+    return np.log(1 + e_x)
+
+def df_softplus(x: np.array):
+    return f_sigmoid(x)
+
+
 sigmoid = ActivationFunction(f_sigmoid, df_sigmoid)
 tanh = ActivationFunction(f_tanh, df_tanh)
 relu = ActivationFunction(f_relu, df_relu)
+softplus = ActivationFunction(f_softplus, df_softplus)
 
 
 class ErrorFunction:

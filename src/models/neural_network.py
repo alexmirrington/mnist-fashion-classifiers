@@ -103,7 +103,13 @@ class FlatDenseLayer(NeuralNetworkLayer):
         return self.outputs
 
     def adjust_weights(self, eta: float, dw: np.ndarray, db: np.ndarray):
-        # TODO Validate shapes of weight changes
+        
+        if dw.shape != self.weights.shape:
+            raise ValueError('Expected param dw of shape {} but got {}'.format(self.weights.shape, dw.shape))
+        
+        if db.shape != self.biases.shape:
+            raise ValueError('Expected param db of shape {} but got {}'.format(self.biases.shape, db.shape))
+
         self.weights += eta * dw
         self.biases += eta * db
 
@@ -190,26 +196,24 @@ class NeuralNetwork(Classifier):
                 batch_lbls = lbl_split[batch_idx]
                 
                 batch_pred, batch_pred_lbls = self.predict(batch)
+                batch_correct = (batch_pred_lbls == batch_lbls.squeeze()).sum()
 
                 batch_actual = np.zeros(batch_pred.shape)
-
                 for i in range(batch_actual.shape[0]):
                     batch_actual[i, batch_lbls.T.squeeze() == i] = 1
-
                 
                 dC_da = sse.d_func(batch_pred, batch_actual)
 
-                batch_correct = (batch_pred_lbls == batch_lbls.squeeze()).sum()
-
-                # iterate through layers, propagating errors
+                # Iterate through layers, propagating errors
                 layer_idx = len(self.layers) - 1
                 while layer_idx > 0:
+
                     layer = self.layers[layer_idx]
                     prev_layer = self.layers[layer_idx-1]
 
                     # Compute weight changes using chain rule
                     d_sigma = layer.activation.d_func(layer.raw_outputs)
-                    dC_dz = dC_da * d_sigma  # a = sigma(z) so da_dz = d_sigma(z)
+                    dC_dz = dC_da * d_sigma  # da_dz = d_sigma(z) since a = sigma(z)
 
                     # Sum over batch to get dw for each weight.
                     # dz_dw = x = prev_outputs.
@@ -234,10 +238,10 @@ class NeuralNetwork(Classifier):
             epoch_idx += 1
             epoch_end = time.perf_counter()
 
-            print('Accuracy: {:.2f}%'.format(epoch_correct/x.shape[0] * 100))
-            print('Epoch {} complete in {:.3f}s'.format(e+1, epoch_end - epoch_start))
             print()
+            print('Epoch {} complete in {:.3f}s'.format(e+1, epoch_end - epoch_start))
+            print('Accuracy: {:.2f}%'.format(epoch_correct/x.shape[0] * 100))
 
-        print('Training complete')
+        print('\nTraining complete')
 
             

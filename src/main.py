@@ -23,18 +23,17 @@ def main():
 
     data_val = data_test_all[:2000]
 
-    label_train = label_train[:, np.newaxis]
-
     model = NeuralNetwork([
         FlatDenseLayer((784,), activation=sigmoid),
         FlatDenseLayer((100,), activation=sigmoid),
         FlatDenseLayer((20,), activation=sigmoid),
         FlatDenseLayer((10,), activation=sigmoid),
     ], eta=0.1, batch_size=64)
+
     model.train(data_train, label_train, epochs=25)
     
     y_activations, y_pred = model.predict(data_val)
-    print(y_pred.shape)
+
     print('Accuracy: {:.02f}%'.format(100*calc_accuracy(y_pred,label_val)))
 
 def calc_accuracy(y_hat, y):

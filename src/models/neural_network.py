@@ -57,7 +57,7 @@ class FlatDenseLayer(NeuralNetworkLayer):
             self.weights = np.random.standard_normal((self.output_shape[0], self.input_shape[0]))
 
     @staticmethod
-    def __get_valid_batch(array: np.ndarray, shape: tuple):
+    def get_valid_batch(array: np.ndarray, shape: tuple):
         """
         Given a specified shape (s0, s1, ..., sk), verify that the array
         is of shape (s0, s1, ..., sk, n).
@@ -78,6 +78,7 @@ class FlatDenseLayer(NeuralNetworkLayer):
         
         return array
 
+
     def get_activations(self, ipt: np.ndarray):
         """
         Get the activations/outputs of the current layer, given the input array.
@@ -85,45 +86,26 @@ class FlatDenseLayer(NeuralNetworkLayer):
 
         # No input_shape implies first layer, just return the input as the output
         if self.input_shape is None:
-            ipt = FlatDenseLayer.__get_valid_batch(ipt, self.output_shape)
+            ipt = FlatDenseLayer.get_valid_batch(ipt, self.output_shape)
             
             self.outputs = ipt
             self.raw_outputs = ipt
 
             return ipt
 
-        ipt = FlatDenseLayer.__get_valid_batch(ipt, self.input_shape)
+        ipt = FlatDenseLayer.get_valid_batch(ipt, self.input_shape)
 
         raw_out = self.weights @ ipt + self.biases
 
-        # TODO Consider memory usage here
-        self.raw_outputs = raw_out.squeeze()
-        self.outputs = self.activation.func(raw_out).squeeze()
-
-        # print(str(min(self.raw_outputs)) + ', ' + str(max(self.raw_outputs)))
+        self.raw_outputs = raw_out
+        self.outputs = self.activation.func(raw_out)
 
         return self.outputs
 
-    def adjust_weights(self, eta: float, prev_outputs: np.ndarray, dC_da: np.ndarray):
-        # TODO Validate shapes of errors
-        
-        # Compute weight changes using chain rule
-        d_sigma = self.activation.d_func(self.raw_outputs)
-
-        dC_dz = dC_da * d_sigma  # a = sigma(z) so da_dz = d_sigma(z)
-
-        dw = eta * (dC_dz @ prev_outputs.T)  # prev_outputs = dz_dw
-
-        # Compute bias changes
-        db = eta * dC_dz.sum(axis=1)
-        db = db[:, np.newaxis]
-
-        next_dC_da = np.dot(self.weights.T, dC_dz)
-
-        self.weights += dw
-        self.biases += db
-
-        return next_dC_da
+    def adjust_weights(self, eta: float, dw: np.ndarray, db: np.ndarray):
+        # TODO Validate shapes of weight changes
+        self.weights += eta * dw
+        self.biases += eta * db
 
 
 class NeuralNetwork(Classifier):
@@ -177,17 +159,10 @@ class NeuralNetwork(Classifier):
         Predict the class of each row of data in x.
         """
 
-        # TODO: Ensure x has same dimension as input layer
         activation = x.T
         for layer in self.layers:
             activation = layer.get_activations(activation)
-        return activation, np.argmax(activation, axis=0)
-        
-    def __predict_single(self, row):
-        ipt = row
-        for layer in self.layers:
-            ipt = layer.get_activations(ipt)
-        return ipt        
+        return activation, np.argmax(activation, axis=0)  
 
 
     def train(self, x: np.ndarray, y: np.ndarray, epochs=25):
@@ -213,7 +188,7 @@ class NeuralNetwork(Classifier):
 
                 batch = data_split[batch_idx]
                 batch_lbls = lbl_split[batch_idx]
-
+                
                 batch_pred, batch_pred_lbls = self.predict(batch)
 
                 batch_actual = np.zeros(batch_pred.shape)
@@ -227,10 +202,31 @@ class NeuralNetwork(Classifier):
                 batch_correct = (batch_pred_lbls == batch_lbls.squeeze()).sum()
 
                 # iterate through layers, propagating errors
-                layer = len(self.layers) - 1
-                while layer > 0:
-                    dC_da = self.layers[layer].adjust_weights(self.eta, self.layers[layer-1].outputs, dC_da)
-                    layer -= 1
+                layer_idx = len(self.layers) - 1
+                while layer_idx > 0:
+                    layer = self.layers[layer_idx]
+                    prev_layer = self.layers[layer_idx-1]
+
+                    # Compute weight changes using chain rule
+                    d_sigma = layer.activation.d_func(layer.raw_outputs)
+                    dC_dz = dC_da * d_sigma  # a = sigma(z) so da_dz = d_sigma(z)
+
+                    # Sum over batch to get dw for each weight.
+                    # dz_dw = x = prev_outputs.
+                    dw = dC_dz @ prev_layer.outputs.T
+
+                    # Compute bias changes
+                    # Sum over batch to get dw for each bias.
+                    # dz_dw = 1. 
+                    db = dC_dz.sum(axis=1)
+                    db = db[:, np.newaxis]
+
+                    layer.adjust_weights(self.eta, dw, db)
+                    
+                    # Compute error to propagate
+                    dC_da = np.dot(layer.weights.T, dC_dz)
+
+                    layer_idx -= 1
 
                 epoch_correct += batch_correct
                 batch_idx += 1

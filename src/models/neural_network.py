@@ -105,8 +105,6 @@ class FlatDenseLayer(NeuralNetworkLayer):
         return self.outputs
 
     def adjust_weights(self, eta: float, prev_outputs: np.ndarray, dC_da: np.ndarray):
-        # print('dC_da:', dC_da.shape)
-        # print('prev_out:', prev_outputs.shape)
         # TODO Validate shapes of errors
         
         # Compute weight changes using chain rule
@@ -115,10 +113,8 @@ class FlatDenseLayer(NeuralNetworkLayer):
         dC_dz = dC_da * d_sigma  # a = sigma(z) so da_dz = d_sigma(z)
 
         dw = eta * (dC_dz @ prev_outputs.T)  # prev_outputs = dz_dw
-        #print(dw)
 
         # Compute bias changes
-        #print(dC_dz.sum(axis=1).shape)
         db = eta * dC_dz.sum(axis=1)
         db = db[:, np.newaxis]
 

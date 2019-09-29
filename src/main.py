@@ -4,7 +4,7 @@ import numpy as np
 from models.classifier import Classifier
 from models.neural_network import NeuralNetwork
 from models.neural_network import FlatDenseLayer
-from models.neural_network import ActivationFunction, sigmoid, tanh, relu
+from utils.functions import sigmoid, tanh, relu
 
 
 def main():
@@ -31,7 +31,7 @@ def main():
         FlatDenseLayer((20,), activation=sigmoid),
         FlatDenseLayer((10,), activation=sigmoid),
     ], eta=0.1, batch_size=64)
-    model.train(data_train, label_train, epochs=100)
+    model.train(data_train, label_train, epochs=25)
     
     y_activations, y_pred = model.predict(data_val)
     print(y_pred.shape)

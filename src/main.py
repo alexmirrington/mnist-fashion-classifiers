@@ -5,6 +5,7 @@ from models.classifier import Classifier
 from models.neural_network import NeuralNetwork
 from models.neural_network import FlatDenseLayer
 from utils.functions import sigmoid, tanh, relu
+from utils.metrics import accuracy
 
 
 def main():
@@ -28,18 +29,13 @@ def main():
         FlatDenseLayer((100,), activation=sigmoid),
         FlatDenseLayer((20,), activation=sigmoid),
         FlatDenseLayer((10,), activation=sigmoid),
-    ], eta=0.1, batch_size=64)
+    ], eta=0.05, batch_size=64)
 
-    model.train(data_train, label_train, epochs=25)
-    
+    model.train(data_train, label_train, epochs=50)
     y_activations, y_pred = model.predict(data_val)
 
-    print('Accuracy: {:.02f}%'.format(100*calc_accuracy(y_pred,label_val)))
+    print('Accuracy: {:.02f}%'.format(100*accuracy(y_pred,label_val)))
 
-def calc_accuracy(y_hat, y):
-    if (y_hat.shape == y.shape):
-        pred = (y_hat == y)
-        return len(np.where(pred == True)[0]) / len(y)
 
 if __name__ == '__main__':
     main()

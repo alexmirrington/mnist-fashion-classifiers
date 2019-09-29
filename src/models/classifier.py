@@ -18,7 +18,7 @@ class Classifier(ABC):
         """
         return
 
-    def train(self, x: np.ndarray, y: np.ndarray, epochs=10):
+    def train(self, x: np.ndarray, y: np.ndarray, epochs=25):
         """
         Train the classifier on a dataset x and corresponding labels y.
         """

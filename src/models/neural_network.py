@@ -57,7 +57,7 @@ class FlatDenseLayer(NeuralNetworkLayer):
             self.weights = np.random.standard_normal((self.output_shape[0], self.input_shape[0]))
 
     @staticmethod
-    def get_valid_batch(array: np.ndarray, shape: tuple):
+    def __get_valid_batch(array: np.ndarray, shape: tuple):
         """
         Given a specified shape (s0, s1, ..., sk), verify that the array
         is of shape (s0, s1, ..., sk, n).
@@ -86,14 +86,14 @@ class FlatDenseLayer(NeuralNetworkLayer):
 
         # No input_shape implies first layer, just return the input as the output
         if self.input_shape is None:
-            ipt = FlatDenseLayer.get_valid_batch(ipt, self.output_shape)
+            ipt = FlatDenseLayer.__get_valid_batch(ipt, self.output_shape)
             
             self.outputs = ipt
             self.raw_outputs = ipt
 
             return ipt
 
-        ipt = FlatDenseLayer.get_valid_batch(ipt, self.input_shape)
+        ipt = FlatDenseLayer.__get_valid_batch(ipt, self.input_shape)
 
         raw_out = self.weights @ ipt + self.biases
 

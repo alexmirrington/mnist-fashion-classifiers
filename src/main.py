@@ -28,7 +28,6 @@ def naive_bayes(train_data, train_labels, test_data, test_labels):
 
     # Predict 10000 test set samples and save predictions
     test_pred = model.predict(test_data)
-    print(len(test_pred))
     save_predictions(naive_bayes.__name__, test_pred)
 
 

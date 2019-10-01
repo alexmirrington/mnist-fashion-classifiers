@@ -12,7 +12,7 @@ from utils.functions import ActivationFunction, sigmoid
 from utils.functions import ErrorFunction, sse
 
 
-class NeuralNetworkLayer:
+class NeuralNetworkLayer(ABC):
 
     def __init__(self, output_shape: tuple, activation=sigmoid):
         # Ensure shapes are valid

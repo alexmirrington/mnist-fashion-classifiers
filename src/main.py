@@ -17,6 +17,8 @@ def main():
 
 def naive_bayes(train_data, train_labels, test_data, test_labels):
 
+    print(f'{MultinomialNaiveBayes.__name__}:')
+
     # Create and train model
     model = MultinomialNaiveBayes()
     model.train(train_data, train_labels)
@@ -24,7 +26,7 @@ def naive_bayes(train_data, train_labels, test_data, test_labels):
     # Predict 2000 validation set samples and calculate accuracy
     test_data_2k = test_data[:len(test_labels)]
     test_pred = model.predict(test_data_2k)
-    print('Test accuracy: {:.02f}%'.format(100*accuracy(test_pred, test_labels)))
+    print('Test accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
 
     # Predict 10000 test set samples and save predictions
     test_pred = model.predict(test_data)
@@ -32,6 +34,8 @@ def naive_bayes(train_data, train_labels, test_data, test_labels):
 
 
 def neural_net(train_data, train_labels, test_data, test_labels):
+
+    print(f'{NeuralNetwork.__name__}:')
 
     # Create and train model
     model = NeuralNetwork([
@@ -46,7 +50,7 @@ def neural_net(train_data, train_labels, test_data, test_labels):
     # Predict 2000 validation set samples and calculate accuracy
     test_data_2k = test_data[:len(test_labels)]
     test_activations, test_pred = model.predict(test_data_2k)
-    print('Test accuracy: {:.02f}%'.format(100*accuracy(test_pred, test_labels)))
+    print('Test accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
 
     # Predict 10000 test set samples and save predictions
     test_activations, test_pred = model.predict(test_data)

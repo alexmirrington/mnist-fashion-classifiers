@@ -3,16 +3,18 @@ import numpy as np
 
 from models.classifier import Classifier
 from models.naive_bayes import MultinomialNaiveBayes
+from models.nearest_neighbour import NearestNeighbour
 from models.neural_network import NeuralNetwork,FlatDenseLayer
 from utils.functions import sigmoid, tanh, relu, softplus
+from utils.functions import manhattan
 from utils.metrics import accuracy
-
 
 def main():
     train_data, train_labels, test_data, test_labels = load_data()
 
-    naive_bayes(train_data, train_labels, test_data, test_labels)
-    neural_net(train_data, train_labels, test_data, test_labels)
+    #naive_bayes(train_data, train_labels, test_data, test_labels)
+    nearest_neighbour(train_data, train_labels, test_data, test_labels)
+    #neural_net(train_data, train_labels, test_data, test_labels)
 
 
 def naive_bayes(train_data, train_labels, test_data, test_labels):
@@ -29,9 +31,30 @@ def naive_bayes(train_data, train_labels, test_data, test_labels):
     print('Test accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
 
     # Predict 10000 test set samples and save predictions
+    print('Predicting 10k samples...')
     test_pred = model.predict(test_data)
     save_predictions(naive_bayes.__name__, test_pred)
+    print('Saved 10k predictions.\n')
 
+
+def nearest_neighbour(train_data, train_labels, test_data, test_labels):
+
+    print(f'{NearestNeighbour.__name__}:')
+
+    # Create and train model
+    model = NearestNeighbour(5, dist=manhattan)
+    model.train(train_data, train_labels)
+    
+    # Predict 2000 validation set samples and calculate accuracy
+    test_data_2k = test_data[:len(test_labels)]
+    test_pred = model.predict(test_data_2k)
+    print('Test accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
+
+    # Predict 10000 test set samples and save predictions
+    print('Predicting 10k samples...')
+    test_pred = model.predict(test_data)
+    save_predictions(nearest_neighbour.__name__, test_pred)
+    print('Saved 10k predictions.\n')
 
 def neural_net(train_data, train_labels, test_data, test_labels):
 
@@ -39,13 +62,13 @@ def neural_net(train_data, train_labels, test_data, test_labels):
 
     # Create and train model
     model = NeuralNetwork([
-        FlatDenseLayer((784,), activation=sigmoid),
-        FlatDenseLayer((100,), activation=sigmoid),
-        FlatDenseLayer((20,), activation=sigmoid),
+        FlatDenseLayer((784,), activation=tanh),
+        FlatDenseLayer((100,), activation=tanh),
+        FlatDenseLayer((20,), activation=tanh),
         FlatDenseLayer((10,), activation=sigmoid),
     ], eta=0.1, batch_size=64)
 
-    model.train(train_data, train_labels, epochs=50)
+    model.train(train_data, train_labels, epochs=250)
 
     # Predict 2000 validation set samples and calculate accuracy
     test_data_2k = test_data[:len(test_labels)]
@@ -53,9 +76,11 @@ def neural_net(train_data, train_labels, test_data, test_labels):
     print('Test accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
 
     # Predict 10000 test set samples and save predictions
+    print('Predicting 10k samples...')
     test_activations, test_pred = model.predict(test_data)
     print(len(test_pred))
     save_predictions(neural_net.__name__, test_pred)
+    print('Saved 10k predictions.\n')
 
 
 def load_data():

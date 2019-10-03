@@ -6,12 +6,6 @@ class Classifier(ABC):
     def __init__(self):
         return
 
-    def clear(self):
-        """
-        Reset all classifier parameters to their defaults.
-        """
-        return
-
     def predict(self, x: np.ndarray) -> np.ndarray:
         """
         Predict the class of each row of data in x.

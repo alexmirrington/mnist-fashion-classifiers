@@ -1,6 +1,19 @@
 import numpy as np
 
+# Distance functions
+def manhattan(x: np.ndarray, y: np.ndarray, axis: int):
+    return np.sum(np.abs(x - y), axis=axis)
 
+def euclidean(x: np.ndarray, y: np.ndarray, axis: int):
+    return minkowski(x, y, 2, axis=axis)
+
+def euclidean_squared(x: np.ndarray, y: np.ndarray, axis: int):
+    return np.sum(np.abs(x - y)**2, axis=axis)
+
+def minkowski(x: np.ndarray, y: np.ndarray, pow: int, axis: int):
+    return np.sum(np.abs(x - y)**pow, axis=axis)**(1/pow)
+
+# Activation functions
 class ActivationFunction:
 
     def __init__(self, func: callable, d_func: callable):
@@ -45,7 +58,7 @@ tanh = ActivationFunction(f_tanh, df_tanh)
 relu = ActivationFunction(f_relu, df_relu)
 softplus = ActivationFunction(f_softplus, df_softplus)
 
-
+# Error functions
 class ErrorFunction:
 
     def __init__(self, func: callable, d_func: callable):

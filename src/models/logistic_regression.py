@@ -5,15 +5,36 @@ from utils.functions import ActivationFunction, sigmoid
 
 class LogisticRegression(Classifier):
 
-    def __init__(self, input_size: int, activation=sigmoid, batch_size=64, epochs=25):
+    def __init__(self, input_size: int, eta=0.01, activation=sigmoid, batch_size=64, epochs=25):
+        # Validate input_size
+        if type(input_size) != int:
+            raise TypeError('Invalid type for param input_size, expected {}'.format(int))
         if input_size <= 0:
             raise ValueError('Parameter input_size must be positive')
+
+        # Validate eta
+        if type(eta) != float:
+            raise TypeError('Invalid type for param eta, expected {}'.format(float))
+        if eta <= 0:
+            raise ValueError('Parameter eta must be positive')
+
+        # Ensure batch_size is > 0
+        if type(batch_size) != int:
+            raise TypeError('Invalid type for param batch_size, expected {}'.format(int))
         if batch_size <= 0:
             raise ValueError('Parameter batch_size must be positive')
 
+        # Ensure epochs is > 0
+        if type(epochs) != int:
+            raise TypeError('Invalid type for param epochs, expected {}'.format(int))
+        if epochs <= 0:
+            raise ValueError('Parameter epochs must be positive')
+
         self.input_size = input_size
-        self.batch_size = batch_size
+        self.eta = eta
         self.activation = activation
+        self.batch_size = batch_size
+        self.epochs = epochs
 
         self.weights = None
         self.randomise()
@@ -23,6 +44,13 @@ class LogisticRegression(Classifier):
         Randomly initialise the layer's weights and biases.
         """
         self.weights = np.random.standard_normal((self.input_size + 1, 1))
+
+    def adjust_weights(self, dw: np.ndarray):
+        
+        if dw.shape != self.weights.shape:
+            raise ValueError('Expected param dw of shape {} but got {}'.format(self.weights.shape, dw.shape))
+
+        self.weights += self.eta * dw
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         """
@@ -37,4 +65,51 @@ class LogisticRegression(Classifier):
         """
         Train the classifier on a dataset x and corresponding labels y.
         """
-        return
+
+        classes = np.unique(y)
+        if len(classes) != 2:
+            raise ValueError('Expected 2 unique classes in param y byt got {}.'.format(len(classes)))
+
+        y_idxs = y
+        y_idxs[y_idxs==classes[0]] = 0
+        y_idxs[y_idxs==classes[1]] = 1
+
+        print('Training started')
+        
+        epoch_idx = 0
+        for e in range(self.epochs):
+
+            data, lbl = shuffle_data(x, y)
+
+            epoch_correct = 0
+            epoch_start = time.perf_counter()
+
+            data_split = np.split(data, range(self.batch_size, len(x), self.batch_size))
+            lbl_split = np.split(lbl, range(self.batch_size, len(x), self.batch_size))
+
+            batch_idx = 0
+            while batch_idx < len(data_split):
+
+                batch = data_split[batch_idx]
+                batch_lbls = lbl_split[batch_idx]
+                
+                batch_pred_lbls, batch_pred_probs = self.predict(batch)
+                
+                batch_correct = (batch_pred_lbls == y_idxs).sum()
+
+                err = batch_pred_probs - y_idxs
+                ones = np.ones((x.shape[0], 1))
+                x_tilde = np.hstack((x, ones))
+
+                dw = np.sum(x_tilde * err, axis=1)
+                self.adjust_weights(dw)
+
+                epoch_correct += batch_correct
+                batch_idx += 1
+
+            epoch_idx += 1
+            epoch_end = time.perf_counter()
+
+            print()
+            print('Epoch {} complete in {:.3f}s'.format(e+1, epoch_end - epoch_start))
+            print('Accuracy: {:.2f}%'.format(epoch_correct/x.shape[0] * 100))

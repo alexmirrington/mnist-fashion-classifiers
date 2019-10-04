@@ -12,9 +12,8 @@ def binary_partition_by_class(x: np.ndarray, y: np.ndarray, partition_map: set):
         if c not in classes:
             raise ValueError('Value {} in parition_map was not found in y.'.format(c))
 
-    partition = y
+    partition = np.copy(y)
     for c in partition_map:
-        partition[partition==c] = 0
-        partition[partition!=c] = 1
+        partition = (partition==c).astype('uint8')
 
     return x, partition

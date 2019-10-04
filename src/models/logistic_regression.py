@@ -70,7 +70,7 @@ class LogisticRegression(Classifier):
 
         classes = np.unique(y)
         if len(classes) != 2:
-            raise ValueError('Expected 2 unique classes in param y byt got {}.'.format(len(classes)))
+            raise ValueError('Expected 2 unique classes in param y but got {}.'.format(len(classes)))
 
         y_idxs = y
         y_idxs[y_idxs==classes[0]] = 0

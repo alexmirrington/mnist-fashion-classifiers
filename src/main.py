@@ -6,6 +6,7 @@ from models.naive_bayes import MultinomialNaiveBayes
 from models.nearest_neighbour import NearestNeighbour
 from models.logistic_regression import LogisticRegression
 from models.neural_network import NeuralNetwork,FlatDenseLayer
+from models.ensembles.one_versus_rest import OneVersusRest
 from utils.functions import sigmoid, tanh, relu, softplus
 from utils.functions import manhattan
 from utils.metrics import accuracy
@@ -24,22 +25,20 @@ def logistic_regression(train_data, train_labels, test_data, test_labels):
 
     print(f'{LogisticRegression.__name__}:')
 
-    data, labels = binary_partition_by_class(train_data, train_labels, {0,})
-    print(data[:10])
-    print(labels[:10])
-
     # Create and train model
-    model = LogisticRegression(train_data.shape[1])
+    lr_model = LogisticRegression(train_data.shape[1], epochs=250)
+    model = OneVersusRest(lr_model)
+
     model.train(train_data, train_labels)
-    
+
     # Predict 2000 validation set samples and calculate accuracy
     test_data_2k = test_data[:len(test_labels)]
-    test_pred, test_probs = model.predict(test_data_2k)
+    test_pred = model.predict(test_data_2k)
     print('Test accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
 
     # Predict 10000 test set samples and save predictions
     print('Predicting 10k samples...')
-    test_pred, test_probs = model.predict(test_data)
+    test_pred = model.predict(test_data)
     save_predictions(logistic_regression.__name__, test_pred)
     print('Saved 10k predictions.\n')
 

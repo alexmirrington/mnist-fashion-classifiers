@@ -9,6 +9,8 @@ from models.neural_network import NeuralNetwork,FlatDenseLayer
 from utils.functions import sigmoid, tanh, relu, softplus
 from utils.functions import manhattan
 from utils.metrics import accuracy
+from utils.preprocessing import binary_partition_by_class
+
 
 def main():
     train_data, train_labels, test_data, test_labels = load_data()
@@ -21,6 +23,10 @@ def main():
 def logistic_regression(train_data, train_labels, test_data, test_labels):
 
     print(f'{LogisticRegression.__name__}:')
+
+    data, labels = binary_partition_by_class(train_data, train_labels, {0,})
+    print(data[:10])
+    print(labels[:10])
 
     # Create and train model
     model = LogisticRegression(train_data.shape[1])

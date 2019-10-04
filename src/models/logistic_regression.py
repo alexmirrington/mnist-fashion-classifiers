@@ -1,11 +1,13 @@
 import numpy as np
+import time
+
 from .classifier import Classifier
 from utils.functions import ActivationFunction, sigmoid
-
+from utils.preprocessing import shuffle_data
 
 class LogisticRegression(Classifier):
 
-    def __init__(self, input_size: int, eta=0.01, activation=sigmoid, batch_size=64, epochs=25):
+    def __init__(self, input_size: int, eta=0.0001, activation=sigmoid, batch_size=64, epochs=25):
         # Validate input_size
         if type(input_size) != int:
             raise TypeError('Invalid type for param input_size, expected {}'.format(int))
@@ -43,7 +45,7 @@ class LogisticRegression(Classifier):
         """
         Randomly initialise the layer's weights and biases.
         """
-        self.weights = np.random.standard_normal((self.input_size + 1, 1))
+        self.weights = np.random.standard_normal((self.input_size + 1,))
 
     def adjust_weights(self, dw: np.ndarray):
         
@@ -58,7 +60,7 @@ class LogisticRegression(Classifier):
         """
         ones = np.ones((x.shape[0], 1))
         x_tilde = np.hstack((x, ones))
-        probability = self.activation.func(x_tilde @ self.weights).squeeze()
+        probability = self.activation.func(x_tilde @ self.weights[:, np.newaxis]).squeeze()
         return np.round(probability).astype('uint8'), probability
 
     def train(self, x: np.ndarray, y: np.ndarray):
@@ -79,8 +81,7 @@ class LogisticRegression(Classifier):
         epoch_idx = 0
         for e in range(self.epochs):
 
-            data, lbl = shuffle_data(x, y)
-
+            data, lbl = shuffle_data(x, y_idxs)
             epoch_correct = 0
             epoch_start = time.perf_counter()
 
@@ -92,16 +93,17 @@ class LogisticRegression(Classifier):
 
                 batch = data_split[batch_idx]
                 batch_lbls = lbl_split[batch_idx]
-                
+
                 batch_pred_lbls, batch_pred_probs = self.predict(batch)
-                
-                batch_correct = (batch_pred_lbls == y_idxs).sum()
 
-                err = batch_pred_probs - y_idxs
-                ones = np.ones((x.shape[0], 1))
-                x_tilde = np.hstack((x, ones))
+                batch_correct = (batch_pred_lbls == batch_lbls).sum()
 
-                dw = np.sum(x_tilde * err, axis=1)
+                err = batch_pred_probs - batch_lbls
+
+                # print(batch_pred_probs)
+                ones = np.ones((batch.shape[0], 1))
+                batch_tilde = np.hstack((batch, ones))
+                dw = -np.sum(batch_tilde.T * err, axis=1)
                 self.adjust_weights(dw)
 
                 epoch_correct += batch_correct

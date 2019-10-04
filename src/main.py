@@ -4,6 +4,7 @@ import numpy as np
 from models.classifier import Classifier
 from models.naive_bayes import MultinomialNaiveBayes
 from models.nearest_neighbour import NearestNeighbour
+from models.logistic_regression import LogisticRegression
 from models.neural_network import NeuralNetwork,FlatDenseLayer
 from utils.functions import sigmoid, tanh, relu, softplus
 from utils.functions import manhattan
@@ -12,9 +13,29 @@ from utils.metrics import accuracy
 def main():
     train_data, train_labels, test_data, test_labels = load_data()
 
-    #naive_bayes(train_data, train_labels, test_data, test_labels)
-    nearest_neighbour(train_data, train_labels, test_data, test_labels)
-    #neural_net(train_data, train_labels, test_data, test_labels)
+    logistic_regression(train_data, train_labels, test_data, test_labels)
+    # naive_bayes(train_data, train_labels, test_data, test_labels)
+    # nearest_neighbour(train_data, train_labels, test_data, test_labels)
+    # neural_net(train_data, train_labels, test_data, test_labels)
+
+def logistic_regression(train_data, train_labels, test_data, test_labels):
+
+    print(f'{LogisticRegression.__name__}:')
+
+    # Create and train model
+    model = LogisticRegression(train_data.shape[1])
+    model.train(train_data, train_labels)
+    
+    # Predict 2000 validation set samples and calculate accuracy
+    test_data_2k = test_data[:len(test_labels)]
+    test_pred, test_probs = model.predict(test_data_2k)
+    print('Test accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
+
+    # Predict 10000 test set samples and save predictions
+    print('Predicting 10k samples...')
+    test_pred, test_probs = model.predict(test_data)
+    save_predictions(logistic_regression.__name__, test_pred)
+    print('Saved 10k predictions.\n')
 
 
 def naive_bayes(train_data, train_labels, test_data, test_labels):
@@ -66,9 +87,9 @@ def neural_net(train_data, train_labels, test_data, test_labels):
         FlatDenseLayer((100,), activation=tanh),
         FlatDenseLayer((20,), activation=tanh),
         FlatDenseLayer((10,), activation=sigmoid),
-    ], eta=0.1, batch_size=64)
+    ], eta=0.01, batch_size=64, epochs=250)
 
-    model.train(train_data, train_labels, epochs=250)
+    model.train(train_data, train_labels)
 
     # Predict 2000 validation set samples and calculate accuracy
     test_data_2k = test_data[:len(test_labels)]

@@ -5,14 +5,20 @@ from .classifier import Classifier
 from utils.functions import ActivationFunction, sigmoid
 from utils.preprocessing import shuffle_data
 
-class LogisticRegression(Classifier):
+class MultinomialLogisticRegression(Classifier):
 
-    def __init__(self, input_size: int, eta=0.01, activation=sigmoid, batch_size=64, epochs=25):
+    def __init__(self, input_size: int, n_classes: int, eta=0.01, batch_size=64, epochs=25):
         # Validate input_size
         if type(input_size) != int:
             raise TypeError('Invalid type for param input_size, expected {}'.format(int))
         if input_size <= 0:
             raise ValueError('Parameter input_size must be positive')
+
+        # Validate n_classes
+        if type(n_classes) != int:
+            raise TypeError('Invalid type for param n_classes, expected {}'.format(int))
+        if n_classes <= 0:
+            raise ValueError('Parameter n_classes must be positive')
 
         # Validate eta
         if type(eta) != float:
@@ -33,8 +39,8 @@ class LogisticRegression(Classifier):
             raise ValueError('Parameter epochs must be positive')
 
         self.input_size = input_size
+        self.n_classes = n_classes
         self.eta = eta
-        self.activation = activation
         self.batch_size = batch_size
         self.epochs = epochs
 
@@ -45,7 +51,7 @@ class LogisticRegression(Classifier):
         """
         Randomly initialise the layer's weights and biases.
         """
-        self.weights = np.random.standard_normal((self.input_size + 1,))
+        self.weights = np.random.standard_normal((self.input_size + 1, self.n_classes))
 
     def adjust_weights(self, dw: np.ndarray):
         
@@ -60,8 +66,9 @@ class LogisticRegression(Classifier):
         """
         ones = np.ones((x.shape[0], 1))
         x_tilde = np.hstack((x, ones))
-        probability = self.activation.func(x_tilde @ self.weights[:, np.newaxis]).squeeze()
-        return np.round(probability).astype('uint8'), probability
+        probabilities = x_tilde @ self.weights
+        #print(probabilities)
+        return np.argmax(probabilities, axis=1), probabilities
 
     def train(self, x: np.ndarray, y: np.ndarray):
         """
@@ -69,19 +76,15 @@ class LogisticRegression(Classifier):
         """
 
         classes = np.unique(y)
-        if len(classes) != 2:
-            raise ValueError('Expected 2 unique classes in param y but got {}.'.format(len(classes)))
-
-        y_idxs = y
-        y_idxs[y_idxs==classes[0]] = 0
-        y_idxs[y_idxs==classes[1]] = 1
+        if len(classes) != self.n_classes:
+            raise ValueError('Expected {} unique classes in param y but got {}.'.format(self.n_classes, len(classes)))
 
         print('Training started')
         
         epoch_idx = 0
         for e in range(self.epochs):
 
-            data, lbl = shuffle_data(x, y_idxs)
+            data, lbl = shuffle_data(x, y)
             epoch_correct = 0
             epoch_start = time.perf_counter()
 
@@ -97,13 +100,18 @@ class LogisticRegression(Classifier):
                 batch_pred_lbls, batch_pred_probs = self.predict(batch)
 
                 batch_correct = (batch_pred_lbls == batch_lbls).sum()
+                batch_actual = np.zeros(batch_pred_probs.shape)
+                for i in range(batch_actual.shape[1]):
+                    batch_actual[batch_lbls.T.squeeze() == i, i] = 1
 
-                err = batch_pred_probs - batch_lbls
-
-                # print(batch_pred_probs)
+                # Compute weight changes for weights for each class
+                # https://math.stackexchange.com/questions/1428344/what-is-the-derivation-of-the-derivative-of-softmax-regression-or-multinomial-l/2081449
+                e_pred = np.exp(batch_pred_probs)
+                d_logs = batch_actual - e_pred/np.sum(e_pred, axis=1)[:, np.newaxis]
                 ones = np.ones((batch.shape[0], 1))
                 batch_tilde = np.hstack((batch, ones))
-                dw = -np.sum(batch_tilde.T * err, axis=1)
+                dw = (batch_tilde.T @ d_logs)
+
                 self.adjust_weights(dw)
 
                 epoch_correct += batch_correct

@@ -5,6 +5,7 @@ from models.classifier import Classifier
 from models.naive_bayes import MultinomialNaiveBayes
 from models.nearest_neighbour import NearestNeighbour
 from models.logistic_regression import LogisticRegression
+from models.multinomial_logistic_regression import MultinomialLogisticRegression
 from models.neural_network import NeuralNetwork,FlatDenseLayer
 from models.ensembles.one_versus_rest import OneVersusRest
 from utils.functions import sigmoid, tanh, relu, softplus
@@ -16,7 +17,8 @@ from utils.preprocessing import binary_partition_by_class
 def main():
     train_data, train_labels, test_data, test_labels = load_data()
 
-    logistic_regression(train_data, train_labels, test_data, test_labels)
+    multinomial_logistic_regression(train_data, train_labels, test_data, test_labels)
+    # logistic_regression(train_data, train_labels, test_data, test_labels)
     # naive_bayes(train_data, train_labels, test_data, test_labels)
     # nearest_neighbour(train_data, train_labels, test_data, test_labels)
     # neural_net(train_data, train_labels, test_data, test_labels)
@@ -26,7 +28,7 @@ def logistic_regression(train_data, train_labels, test_data, test_labels):
     print(f'{LogisticRegression.__name__}:')
 
     # Create and train model
-    lr_model = LogisticRegression(train_data.shape[1], epochs=250)
+    lr_model = LogisticRegression(train_data.shape[1], eta=0.001, epochs=50)
     model = OneVersusRest(lr_model)
 
     model.train(train_data, train_labels)
@@ -40,6 +42,32 @@ def logistic_regression(train_data, train_labels, test_data, test_labels):
     print('Predicting 10k samples...')
     test_pred = model.predict(test_data)
     save_predictions(logistic_regression.__name__, test_pred)
+    print('Saved 10k predictions.\n')
+
+
+def multinomial_logistic_regression(train_data, train_labels, test_data, test_labels):
+
+    print(f'{MultinomialLogisticRegression.__name__}:')
+
+    # Create and train model
+    model = MultinomialLogisticRegression(
+        train_data.shape[1],
+        len(np.unique(train_labels)),
+        eta=0.001,
+        epochs=250
+    )
+
+    model.train(train_data, train_labels)
+
+    # Predict 2000 validation set samples and calculate accuracy
+    test_data_2k = test_data[:len(test_labels)]
+    test_pred, test_probs = model.predict(test_data_2k)
+    print('Test accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
+
+    # Predict 10000 test set samples and save predictions
+    print('Predicting 10k samples...')
+    test_pred, test_probs = model.predict(test_data)
+    save_predictions(multinomial_logistic_regression.__name__, test_pred)
     print('Saved 10k predictions.\n')
 
 

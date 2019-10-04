@@ -11,13 +11,13 @@ from models.ensembles.one_versus_rest import OneVersusRest
 from utils.functions import sigmoid, tanh, relu, softplus
 from utils.functions import manhattan
 from utils.metrics import accuracy
-from utils.preprocessing import binary_partition_by_class
+from utils.preprocessing import binary_partition_by_class, PCA
 
 
 def main():
     train_data, train_labels, test_data, test_labels = load_data()
-
-    multinomial_logistic_regression(train_data, train_labels, test_data, test_labels)
+    
+    # multinomial_logistic_regression(train_data, train_labels, test_data, test_labels)
     # logistic_regression(train_data, train_labels, test_data, test_labels)
     # naive_bayes(train_data, train_labels, test_data, test_labels)
     # nearest_neighbour(train_data, train_labels, test_data, test_labels)

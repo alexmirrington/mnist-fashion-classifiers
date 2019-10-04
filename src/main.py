@@ -8,6 +8,7 @@ from models.logistic_regression import LogisticRegression
 from models.multinomial_logistic_regression import MultinomialLogisticRegression
 from models.neural_network import NeuralNetwork,FlatDenseLayer
 from models.ensembles.one_versus_rest import OneVersusRest
+from models.linear_svm import LinearSVM
 from utils.functions import sigmoid, tanh, relu, softplus
 from utils.functions import manhattan
 from utils.metrics import accuracy
@@ -23,6 +24,28 @@ def main():
     # naive_bayes(train_data, train_labels, test_data, test_labels)
     # nearest_neighbour(train_data, train_labels, test_data, test_labels)
     # neural_net(train_data, train_labels, test_data, test_labels)
+    # linear_svm(train_data, train_labels, test_data, test_labels)
+    
+def linear_svm(train_data, train_labels, test_data, test_labels):
+    print(f'{LinearSVM.__name__}:')
+
+    # Create and train model
+    lsvm_model = LinearSVM(alpha=0.01, features=180)
+    model = OneVersusRest(lsvm_model)
+    
+    model.train(train_data, train_labels)
+
+    # Predict 2000 validation set samples and calculate accuracy
+    test_data_2k = test_data[:len(test_labels)]
+    test_pred = model.predict(test_data_2k)
+    print('Test accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
+
+    # Predict 10000 test set samples and save predictions
+    print('Predicting 10k samples...')
+    test_pred = model.predict(test_data)
+    save_predictions(linear_svm.__name__, test_pred)
+    print('Saved 10k predictions.\n')
+
 
     # Generate stratified folds
     n_folds = 10

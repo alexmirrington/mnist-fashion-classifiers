@@ -116,7 +116,7 @@ class FlatDenseLayer(NeuralNetworkLayer):
 
 class NeuralNetwork(Classifier):
 
-    def __init__(self, layers: list, eta=0.05, batch_size=64, epochs=25):
+    def __init__(self, layers: list, eta=0.01, batch_size=64, epochs=25):
         # Ensure layers is a ist of NeuralNetworkLayer objects
         for l in layers:
             if not isinstance(l, NeuralNetworkLayer):

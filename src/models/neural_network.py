@@ -116,11 +116,17 @@ class FlatDenseLayer(NeuralNetworkLayer):
 
 class NeuralNetwork(Classifier):
 
-    def __init__(self, layers: list, eta=0.05, batch_size=64):
+    def __init__(self, layers: list, eta=0.05, batch_size=64, epochs=25):
         # Ensure layers is a ist of NeuralNetworkLayer objects
         for l in layers:
             if not isinstance(l, NeuralNetworkLayer):
                 raise TypeError('Invalid type in list {}, expected {}'.format(layers, NeuralNetworkLayer))
+        
+        # Validate eta
+        if type(eta) != float:
+            raise TypeError('Invalid type for param eta, expected {}'.format(float))
+        if eta <= 0:
+            raise ValueError('Parameter eta must be positive')
         
         # Ensure batch_size is > 0
         if type(batch_size) != int:
@@ -128,15 +134,16 @@ class NeuralNetwork(Classifier):
         if batch_size <= 0:
             raise ValueError('Parameter batch_size must be positive')
 
-        # Validate eta
-        if type(eta) != float:
-            raise TypeError('Invalid type for param eta, expected {}'.format(float))
-        if eta <= 0:
-            raise ValueError('Parameter eta must be positive')
+        # Ensure epochs is > 0
+        if type(epochs) != int:
+            raise TypeError('Invalid type for param epochs, expected {}'.format(int))
+        if epochs <= 0:
+            raise ValueError('Parameter epochs must be positive')
         
         self.layers = layers
         self.eta = eta
         self.batch_size = batch_size
+        self.epochs = epochs
 
         # Link layers
         i = 1
@@ -171,7 +178,7 @@ class NeuralNetwork(Classifier):
         return activation, np.argmax(activation, axis=0)  
 
 
-    def train(self, x: np.ndarray, y: np.ndarray, epochs=25):
+    def train(self, x: np.ndarray, y: np.ndarray):
         """
         Train the classifier on a dataset x and corresponding labels y.
         """
@@ -179,7 +186,7 @@ class NeuralNetwork(Classifier):
         print('Training started')
         
         epoch_idx = 0
-        for e in range(epochs):
+        for e in range(self.epochs):
 
             data, lbl = shuffle_data(x, y)
 

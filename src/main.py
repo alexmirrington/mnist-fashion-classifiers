@@ -26,6 +26,22 @@ def main():
     # neural_net(train_data, train_labels, test_data, test_labels)
     # linear_svm(train_data, train_labels, test_data, test_labels)
     
+    # Generate stratified folds
+    n_folds = 10
+    fold_data, fold_labels = get_stratified_folds(train_data, train_labels, n=n_folds)
+
+    for i in range(n_folds):
+        fold_train_data = np.concatenate([fold_data[:i], fold_data[i + 1:]])
+        fold_train_data = np.concatenate(fold_train_data)
+
+        fold_train_labels = np.concatenate([fold_labels[:i], fold_labels[i + 1:]])
+        fold_train_labels = np.concatenate(fold_train_labels)
+
+        fold_test_data = fold_data[i]
+
+        fold_test_labels = fold_labels[i]
+
+
 def linear_svm(train_data, train_labels, test_data, test_labels):
     print(f'{LinearSVM.__name__}:')
 
@@ -45,22 +61,6 @@ def linear_svm(train_data, train_labels, test_data, test_labels):
     test_pred = model.predict(test_data)
     save_predictions(linear_svm.__name__, test_pred)
     print('Saved 10k predictions.\n')
-
-
-    # Generate stratified folds
-    n_folds = 10
-    fold_data, fold_labels = get_stratified_folds(train_data, train_labels, n=n_folds)
-
-    for i in range(n_folds):
-        fold_train_data = np.concatenate([fold_data[:i], fold_data[i + 1:]])
-        fold_train_data = np.concatenate(fold_train_data)
-
-        fold_train_labels = np.concatenate([fold_labels[:i], fold_labels[i + 1:]])
-        fold_train_labels = np.concatenate(fold_train_labels)
-
-        fold_test_data = fold_data[i]
-
-        fold_test_labels = fold_labels[i]
 
 
 def logistic_regression(train_data, train_labels, test_data, test_labels):

@@ -2,6 +2,61 @@ import numpy as np
 from scipy.linalg import svd
 
 
+def get_stratified_folds(x: np.ndarray, y: np.ndarray, n: int=10):
+    y = y[:, np.newaxis]
+    data = np.concatenate((x, y), axis=1)
+    classes = np.unique(y)
+    class_split = []
+    folds = [[] for i in range(n)]
+
+    leftover = []
+
+    for c in classes:
+        # Split dataset by class and get n folds for each class
+        c_data = data[data[:, -1] == c]
+        split_size = int(c_data.shape[0] / n)
+        split_idxs = list(range(split_size, c_data.shape[0], split_size))
+        c_data_split = np.array_split(c_data, split_idxs)
+
+        # Take out any samples that are leftover.
+        # These will be added in at the end to ensure
+        # proper stratification of folds.
+        remainder  = c_data.shape[0] % n
+        if remainder != 0:
+            leftover_split = c_data_split.pop()
+            leftover.append(leftover_split)
+
+        # Merge n folds for each class into n folds containing all classes
+        class_split.append(c_data_split)
+        fold_idx = 0
+        for split in c_data_split:
+            folds[fold_idx].append(split)
+            fold_idx += 1
+
+    # Turn folds to numpy arrays
+    folds_np = []
+    for fold in folds:
+        fold_np = np.concatenate(fold)
+        folds_np.append(fold_np)
+
+    # Distribute leftovers across folds.
+    leftover = np.concatenate(leftover)
+    for i in range(leftover.shape[0]):
+        fold_idx = i % n
+        leftover_split = leftover[i][np.newaxis, :]
+        folds_np[fold_idx] = np.concatenate([folds_np[fold_idx], leftover_split])
+
+    # Prove folds are stratified.
+    # for fold in folds_np:
+    #     print(fold.shape)
+    #     unique, counts = np.unique(fold[:, -1], return_counts=True)
+    #     print(tuple(zip(unique, counts)))
+    #     print()
+
+    folds_np = np.stack(folds_np)
+    return folds_np[:, :, :-1], folds_np[:, :, -1]
+
+
 def shuffle_data(x: np.ndarray, y:  np.ndarray):
     y = y[:, np.newaxis]
     data = np.concatenate((x, y), axis=1)

@@ -11,17 +11,34 @@ from models.ensembles.one_versus_rest import OneVersusRest
 from utils.functions import sigmoid, tanh, relu, softplus
 from utils.functions import manhattan
 from utils.metrics import accuracy
-from utils.preprocessing import binary_partition_by_class, PCA
+from utils.preprocessing import binary_partition_by_class, get_stratified_folds, PCA
 
 
 def main():
+
     train_data, train_labels, test_data, test_labels = load_data()
-    
+
     # multinomial_logistic_regression(train_data, train_labels, test_data, test_labels)
     # logistic_regression(train_data, train_labels, test_data, test_labels)
     # naive_bayes(train_data, train_labels, test_data, test_labels)
     # nearest_neighbour(train_data, train_labels, test_data, test_labels)
     # neural_net(train_data, train_labels, test_data, test_labels)
+
+    # Generate stratified folds
+    n_folds = 10
+    fold_data, fold_labels = get_stratified_folds(train_data, train_labels, n=n_folds)
+
+    for i in range(n_folds):
+        fold_train_data = np.concatenate([fold_data[:i], fold_data[i + 1:]])
+        fold_train_data = np.concatenate(fold_train_data)
+
+        fold_train_labels = np.concatenate([fold_labels[:i], fold_labels[i + 1:]])
+        fold_train_labels = np.concatenate(fold_train_labels)
+
+        fold_test_data = fold_data[i]
+
+        fold_test_labels = fold_labels[i]
+
 
 def logistic_regression(train_data, train_labels, test_data, test_labels):
 

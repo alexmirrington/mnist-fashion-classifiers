@@ -11,7 +11,7 @@ from models.ensembles.one_versus_rest import OneVersusRest
 from models.linear_svm import LinearSVM
 from utils.functions import sigmoid, tanh, relu, softplus
 from utils.functions import manhattan
-from utils.metrics import accuracy
+from utils.metrics import accuracy, confusion_matrix, recall, precision, f1_score
 from utils.preprocessing import binary_partition_by_class, get_stratified_folds, PCA
 
 
@@ -19,7 +19,7 @@ def main():
 
     train_data, train_labels, test_data, test_labels = load_data()
 
-    # multinomial_logistic_regression(train_data, train_labels, test_data, test_labels)
+    multinomial_logistic_regression(train_data, train_labels, test_data, test_labels)
     # logistic_regression(train_data, train_labels, test_data, test_labels)
     # naive_bayes(train_data, train_labels, test_data, test_labels)
     # nearest_neighbour(train_data, train_labels, test_data, test_labels)
@@ -54,7 +54,15 @@ def linear_svm(train_data, train_labels, test_data, test_labels):
     # Predict 2000 validation set samples and calculate accuracy
     test_data_2k = test_data[:len(test_labels)]
     test_pred = model.predict(test_data_2k)
-    print('Test accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
+
+    # Print metrics
+    print('\nTest Accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
+    mat, classes = confusion_matrix(test_pred, test_labels)
+    print('Precision:\n{}\n'.format(np.round(precision(test_pred, test_labels), 2)))
+    print('Recall:\n{}\n'.format(np.round(recall(test_pred, test_labels), 2)))
+    print('F1:\n{}\n'.format(np.round(f1_score(test_pred, test_labels), 2)))
+    print('Confusion Matrix:')
+    print(mat)
 
     # Predict 10000 test set samples and save predictions
     print('Predicting 10k samples...')
@@ -76,7 +84,15 @@ def logistic_regression(train_data, train_labels, test_data, test_labels):
     # Predict 2000 validation set samples and calculate accuracy
     test_data_2k = test_data[:len(test_labels)]
     test_pred = model.predict(test_data_2k)
-    print('Test accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
+
+    # Print metrics
+    print('\nTest Accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
+    mat, classes = confusion_matrix(test_pred, test_labels)
+    print('Precision:\n{}\n'.format(np.round(precision(test_pred, test_labels), 2)))
+    print('Recall:\n{}\n'.format(np.round(recall(test_pred, test_labels), 2)))
+    print('F1:\n{}\n'.format(np.round(f1_score(test_pred, test_labels), 2)))
+    print('Confusion Matrix:')
+    print(mat)
 
     # Predict 10000 test set samples and save predictions
     print('Predicting 10k samples...')
@@ -94,7 +110,7 @@ def multinomial_logistic_regression(train_data, train_labels, test_data, test_la
         train_data.shape[1],
         len(np.unique(train_labels)),
         eta=0.001,
-        epochs=250
+        epochs=5 #250
     )
 
     model.train(train_data, train_labels)
@@ -102,7 +118,15 @@ def multinomial_logistic_regression(train_data, train_labels, test_data, test_la
     # Predict 2000 validation set samples and calculate accuracy
     test_data_2k = test_data[:len(test_labels)]
     test_pred, test_probs = model.predict(test_data_2k)
-    print('Test accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
+
+    # Print metrics
+    print('\nTest Accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
+    mat, classes = confusion_matrix(test_pred, test_labels)
+    print('Precision:\n{}\n'.format(np.round(precision(test_pred, test_labels), 2)))
+    print('Recall:\n{}\n'.format(np.round(recall(test_pred, test_labels), 2)))
+    print('F1:\n{}\n'.format(np.round(f1_score(test_pred, test_labels), 2)))
+    print('Confusion Matrix:')
+    print(mat)
 
     # Predict 10000 test set samples and save predictions
     print('Predicting 10k samples...')
@@ -122,7 +146,15 @@ def naive_bayes(train_data, train_labels, test_data, test_labels):
     # Predict 2000 validation set samples and calculate accuracy
     test_data_2k = test_data[:len(test_labels)]
     test_pred = model.predict(test_data_2k)
-    print('Test accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
+
+    # Print metrics
+    print('\nTest Accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
+    mat, classes = confusion_matrix(test_pred, test_labels)
+    print('Precision:\n{}\n'.format(np.round(precision(test_pred, test_labels), 2)))
+    print('Recall:\n{}\n'.format(np.round(recall(test_pred, test_labels), 2)))
+    print('F1:\n{}\n'.format(np.round(f1_score(test_pred, test_labels), 2)))
+    print('Confusion Matrix:')
+    print(mat)
 
     # Predict 10000 test set samples and save predictions
     print('Predicting 10k samples...')
@@ -142,7 +174,15 @@ def nearest_neighbour(train_data, train_labels, test_data, test_labels):
     # Predict 2000 validation set samples and calculate accuracy
     test_data_2k = test_data[:len(test_labels)]
     test_pred = model.predict(test_data_2k)
-    print('Test accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
+
+    # Print metrics
+    print('\nTest Accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
+    mat, classes = confusion_matrix(test_pred, test_labels)
+    print('Precision:\n{}\n'.format(np.round(precision(test_pred, test_labels), 2)))
+    print('Recall:\n{}\n'.format(np.round(recall(test_pred, test_labels), 2)))
+    print('F1:\n{}\n'.format(np.round(f1_score(test_pred, test_labels), 2)))
+    print('Confusion Matrix:')
+    print(mat)
 
     # Predict 10000 test set samples and save predictions
     print('Predicting 10k samples...')
@@ -167,7 +207,15 @@ def neural_net(train_data, train_labels, test_data, test_labels):
     # Predict 2000 validation set samples and calculate accuracy
     test_data_2k = test_data[:len(test_labels)]
     test_activations, test_pred = model.predict(test_data_2k)
-    print('Test accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
+    
+    # Print metrics
+    print('\nTest Accuracy: {:.02f}%\n'.format(100*accuracy(test_pred, test_labels)))
+    mat, classes = confusion_matrix(test_pred, test_labels)
+    print('Precision:\n{}\n'.format(np.round(precision(test_pred, test_labels), 2)))
+    print('Recall:\n{}\n'.format(np.round(recall(test_pred, test_labels), 2)))
+    print('F1:\n{}\n'.format(np.round(f1_score(test_pred, test_labels), 2)))
+    print('Confusion Matrix:')
+    print(mat)
 
     # Predict 10000 test set samples and save predictions
     print('Predicting 10k samples...')
